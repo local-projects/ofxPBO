@@ -10,13 +10,14 @@
 
 #ifndef TARGET_OPENGLES
 
-
 ofPBO::ofPBO() {
 	// TODO Auto-generated constructor stub
 
 }
 
 ofPBO::~ofPBO() {
+	condition.signal();
+	waitForThread(true);
 	if(!pboIds.empty()){
 		glDeleteBuffersARB(pboIds.size(), &pboIds[0]);
 	}
@@ -26,18 +27,13 @@ void ofPBO::allocate(ofTexture & tex, int numPBOs){
 	pboIds.resize(numPBOs);
     glGenBuffersARB(numPBOs, &pboIds[0]);
     int numChannels=1;
-    switch(tex.getTextureData().glTypeInternal){
-    case GL_LUMINANCE8:
-    	numChannels = 1;
-    	break;
-    case GL_RGB8:
-    	numChannels = 3;
-    	break;
-    case GL_RGBA8:
-    	numChannels = 4;
-    	break;
-    }
-    dataSize = tex.getWidth()*tex.getHeight()*numChannels;
+	switch(tex.getTextureData().glInternalFormat){
+		case GL_LUMINANCE8: numChannels = 1; break;
+		case GL_RGB8: numChannels = 3; break;
+		case GL_RGBA8: numChannels = 4; break;
+		case GL_BGRA: numChannels = 4; break;
+	}
+    dataSize = tex.getWidth() * tex.getHeight() * numChannels;
     for(int i=0;i<(int)pboIds.size();i++){
 		glBindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, pboIds[i]);
 		glBufferDataARB(GL_PIXEL_UNPACK_BUFFER_ARB, dataSize, 0, GL_STREAM_DRAW_ARB);
@@ -46,8 +42,9 @@ void ofPBO::allocate(ofTexture & tex, int numPBOs){
 
     texture = tex;
     lastDataUploaded = true;
-    startThread();
+	startThread();
 }
+
 
 void ofPBO::loadData(const ofPixels & pixels, bool threaded){
 	if(pboIds.empty()){
@@ -66,7 +63,7 @@ void ofPBO::loadData(const ofPixels & pixels, bool threaded){
 
     indexUploading = (indexUploading + 1) % pboIds.size();
 
-    cpu_ptr = pixels.getPixels();
+    cpu_ptr = pixels.getData();
 
 	// bind PBO to update pixel values
 	glBindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, pboIds[indexUploading]);
@@ -112,7 +109,7 @@ void ofPBO::updateTexture(){
 		// bind the texture and PBO
 		texture.bind();
 		glBindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, pboIds[indexToUpdate]);
-		glTexSubImage2D(texture.getTextureData().textureTarget, 0, 0, 0, texture.getWidth(), texture.getHeight(), ofGetGLFormatFromInternal(texture.getTextureData().glTypeInternal), GL_UNSIGNED_BYTE, 0);
+		glTexSubImage2D(texture.getTextureData().textureTarget, 0, 0, 0, texture.getWidth(), texture.getHeight(), ofGetGLFormatFromInternal(texture.getTextureData().glInternalFormat), GL_UNSIGNED_BYTE, 0);
 		texture.unbind();
 		// it is good idea to release PBOs with ID 0 after use.
 		// Once bound with 0, all pixel operations behave normal ways.
@@ -122,4 +119,9 @@ void ofPBO::updateTexture(){
 		mutex.unlock();
 	}
 }
+
 #endif
+
+
+
+
