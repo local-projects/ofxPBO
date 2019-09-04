@@ -6,9 +6,10 @@
  */
 
 #pragma once
-#include "ofConstants.h"
-#include "ofTexture.h"
-#include "ofThread.h"
+#include "ofMain.h"
+//#include "ofConstants.h"
+//#include "ofTexture.h"
+//#include "ofThread.h"
 #include "Poco/Condition.h"
 
 class ofPBO: public ofThread {
@@ -24,7 +25,8 @@ public:
 private:
 	ofTexture texture;
 	vector<GLuint> pboIds;
-	size_t indexUploading, indexToUpdate;
+	size_t indexUploading = 0;
+	size_t indexToUpdate = 0;
 	unsigned int dataSize;
 	Poco::Condition condition;
 	GLubyte* gpu_ptr;

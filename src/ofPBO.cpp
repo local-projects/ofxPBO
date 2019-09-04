@@ -6,7 +6,7 @@
  */
 
 #include "ofPBO.h"
-#include <aio.h>
+//#include <aio.h>
 
 #ifndef TARGET_OPENGLES
 
